@@ -10,7 +10,7 @@ lndex.html
 loader.js
 psfree.js
 send.js
-kpatch\900.elf
+kpatch\900.bin
 module\chain.js
 module\constants.js
 module\int64.js
