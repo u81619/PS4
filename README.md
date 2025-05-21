@@ -24,6 +24,10 @@ AGPL-3.0-or-later (see src/COPYING). This repo belongs to the group
 `anonymous`. We refer to anonymous contributors as "anonymous" as well.
 
 # CREDITS:
-* anonymous for PS4 firmware kernel dumps
-* Check the appropriate files for any **extra** contributors. Unless otherwise
-  stated, everything here can also be credited to us.
+- Jhon https://github.com/janisslsm
+- SiSTR0 https://github.com/SiSTR0
+- CTN https://github.com/ctn123
+- Al-Azif https://github.com/al-azif
+- abc for PSFree webkit exploit & Lapse kernel Exploit
+- Chendochap https://github.com/ChendoChap
+- kameleonre.. for porting and chaining psfree + lapse on ps4 9.00 :P
