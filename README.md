@@ -2,10 +2,9 @@
 
 Lapse Kex ported to 9.00 - Still WIP
 
-Very fast and reliable but can KP :P
+Very fast and reliable but can Stable
 
-- Needs a bin loader on Port 9020.
-- Some performance Tweaks??.
+- Some performance Tweaks add
 - Add sysveri Patch
   
 PR are welcome 
