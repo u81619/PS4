@@ -2,7 +2,7 @@
 
 Lapse Kex ported to 9.00 - Still WIP
 
-Very fast and reliable but can Stable
+Very fast and Stable
 
 - Some performance Tweaks add
 - Add sysveri Patch
