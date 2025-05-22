@@ -1329,13 +1329,17 @@ function make_kernel_arw(pktopts_sds, dirty_sd, k100_addr, kernel_addr, sds) {
     const pktopts = new Buffer(0x100);
     const rsize = build_rthdr(pktopts, pktopts.size);
     const pktinfo_p = k100_addr.add(0x10);
+    // pktopts.ip6po_pktinfo = &pktopts.ip6po_pktinfo
     pktopts.write64(0x10, pktinfo_p);
 
-    log('overwrite main pktopts');    
+    log('overwrite main pktopts');
     let reclaim_sd = null;
     close(pktopts_sds[1]);
     for (let i = 0; i < num_alias; i++) {
         for (let i = 0; i < num_sds; i++) {
+            // if a socket doesn't have a pktopts, setting the rthdr will make
+            // one. the new pktopts might reuse the memory instead of the
+            // rthdr. make sure the sockets already have a pktopts before
             pktopts.write32(off_tclass, 0x4141 | i << 16);
             set_rthdr(sds[i], pktopts, rsize);
         }
