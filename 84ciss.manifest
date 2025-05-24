@@ -1,7 +1,8 @@
 CACHE MANIFEST 
 #VERSION 1.1 
 
-CACHE:
+CACHE: 
+alert.js
 config.js
 goldhen.bin
 index.html
