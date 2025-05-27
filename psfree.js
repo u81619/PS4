@@ -859,5 +859,4 @@ async function main() {
     // path to your script that will use the exploit
     import('./lapse.js');
 }
-setTimeout(StartTimer, 1500);
 setTimeout(main, 1500);
