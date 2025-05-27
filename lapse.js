@@ -989,7 +989,7 @@ function make_aliased_pktopts(sds) {
         }
     }
     localStorage.failcount = ++localStorage.failcount;window.failCounter.innerHTML=localStorage.failcount; 
-    die('failed to make aliased pktopts');    
+    die('failed to make aliased pktopts');
 }
 
 function double_free_reqs1(
@@ -1596,7 +1596,8 @@ async function patch_kernel(kbase, kmem, p_ucred, restore_info) {
     sysi('setuid', 0);
     showMessage("GoldHen Loaded Successfully !..."),    
     log('kernel exploit succeeded!');
-    localStorage.passcount = ++localStorage.passcount;window.passCounter.innerHTML=localStorage.passcount;        
+    localStorage.passcount = ++localStorage.passcount;window.passCounter.innerHTML=localStorage.passcount;    
+    
     //alert("kernel exploit succeeded!");
 }
 
