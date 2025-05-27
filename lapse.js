@@ -99,6 +99,8 @@ function toogle_payload() {
         payload_loader,
         payload_buffer,
     );
+    localStorage.passcount = ++localStorage.passcount;window.passCounter.innerHTML=localStorage.passcount;
+    EndTimer();
 }
 
 // sys/socket.h
@@ -1027,6 +1029,7 @@ function make_aliased_pktopts(sds) {
             setsockopt(sds[i], IPPROTO_IPV6, IPV6_2292PKTOPTIONS, 0, 0);
         }
     }
+    localStorage.failcount = ++localStorage.failcount;window.failCounter.innerHTML=localStorage.failcount; 
     die('failed to make aliased pktopts');
 }
 

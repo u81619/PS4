@@ -840,6 +840,7 @@ async function make_arw(reader, view2, pop) {
 }
 
 async function main() {
+    StartTimer();
     log('STAGE: UAF SSV');
     const [fsets, indices] = prepare_uaf();
     const [view, [view2, pop]] = await uaf_ssv(fsets, indices[1], indices[0]);
