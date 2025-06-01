@@ -208,7 +208,7 @@ const num_grooms = 0x200;
 const num_handles = 0x100;
 const num_sds = 0x100; // max is 0x100 due to max IPV6_TCLASS
 const num_alias = 100;
-const num_races = 200;
+const num_races = 100;
 const leak_len = 16;
 const num_leaks = 5;
 const num_clobbers = 8;
@@ -1062,7 +1062,7 @@ function make_aliased_pktopts(sds) {
             }
         }
     }
-    localStorage.failcount = ++localStorage.failcount;window.failCounter.innerHTML=localStorage.failcount;     
+    localStorage.failcount = ++localStorage.failcount;window.failCounter.innerHTML=localStorage.failcount;
     die('failed to make aliased pktopts');
 }
 
