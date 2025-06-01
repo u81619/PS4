@@ -3,11 +3,11 @@ CACHE MANIFEST
 
 CACHE: 
 alert.js
+cache.html
 config.js
 goldhen.bin
 index.html
 lapse.js
-lndex.html
 loader.js
 psfree.js
 send.js
