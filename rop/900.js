@@ -128,7 +128,7 @@ const webkit_gadget_offsets = new Map(Object.entries({
     'pop rdi; ret' : 0x0000000000319690, // `5f c3`
     'pop rsp; ret' : 0x000000000004e293, // `5c c3`
 
-    'pop r8; ret' : 0x00000000001a7ef1, // `47 58 c3`
+    'pop r8; ret' : 0x0000000000AFAA71, // `47 58 c3`  //1a7ef1
     'pop r9; ret' : 0x0000000000422571, // `47 59 c3`
     'pop r10; ret' : 0x0000000000e9e1d1, // `47 5a c3`
     'pop r11; ret' : 0x00000000012b1d51, // `47 5b c3`
@@ -142,8 +142,8 @@ const webkit_gadget_offsets = new Map(Object.entries({
     'leave; ret' : 0x000000000008db5b, // `c9 c3`
 
     'mov rax, qword ptr [rax]; ret' : 0x00000000000241cc, // `48 8b 00 c3`
-    'mov qword ptr [rdi], rax; ret' : 0x000000000000613b, // `48 89 07 c3`
-    'mov dword ptr [rdi], eax; ret' : 0x000000000000613c, // `89 07 c3`
+    'mov qword ptr [rdi], rax; ret' : 0x00000000010788F7, // `48 89 07 c3`  //000613b
+    'mov dword ptr [rdi], eax; ret' : 0x00000000009964BC, // `89 07 c3`     //00613c
     'mov dword ptr [rax], esi; ret' : 0x00000000005c3482, // `89 30 c3`
   
 
