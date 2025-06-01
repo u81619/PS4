@@ -1706,10 +1706,12 @@ export async function kexploit() {
     const _init_t2 = performance.now();
 
     // If setuid is successful, we dont need to run the kexploit again
-    if (sysi('setuid', 0) == 0) {
-          log("Not running kexploit again.");
-          return;
+    try {
+        if (sysi('setuid', 0) == 0) {
+            log("Not running kexploit again.")
+            return;
         }
+    }
     catch (e) {}
 
     // fun fact:
